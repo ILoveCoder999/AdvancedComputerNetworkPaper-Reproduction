@@ -1,0 +1,156 @@
+========== 开始 ==========
+-- Using default output directory /home/xi/ns-3-dev/build
+-- [33mProceeding without cmake-format[0m
+-- [33mPython: development libraries were not found[0m
+-- [33mBoost was not found[0m
+-- [33mdocs: doxygen documentation not enabled due to missing dependencies: doxygen dot dia[0m
+-- Failed to locate sphinx-build executable (missing: SPHINX_EXECUTABLE) 
+-- [33mdocs: sphinx documentation not enabled due to missing dependencies: Sphinx epstopdf pdflatex latexmk convert dvipng dia[0m
+-- Precompiled headers were enabled
+-- Processing src/antenna
+-- Standard library Bessel function has been found
+-- Processing src/aodv
+-- Processing src/applications
+-- Processing src/bridge
+-- Processing src/brite
+-- [33mSkipping src/brite[0m
+-- Processing src/buildings
+-- Processing src/click
+-- [33mSkipping src/click[0m
+-- Processing src/config-store
+-- Processing src/core
+-- Boost Units are an optional feature of length.cc.  Ubuntu ships it within the libboost-dev package.  You may need to clean up the CMake cache after installing it to pass this check.
+-- Processing src/csma
+-- Processing src/csma-layout
+-- Processing src/dsdv
+-- Processing src/dsr
+-- Processing src/energy
+-- Processing src/fd-net-device
+-- Checking for module 'libdpdk'
+--   No package 'libdpdk' found
+-- Processing src/flow-monitor
+-- Processing src/internet
+-- Processing src/internet-apps
+-- Processing src/lr-wpan
+-- Processing src/lte
+-- Processing src/mesh
+-- Processing src/mobility
+-- Processing src/netanim
+-- Processing src/network
+-- Processing src/nix-vector-routing
+-- Processing src/olsr
+-- Processing src/openflow
+-- [33mSkipping src/openflow[0m
+-- Processing src/point-to-point
+-- Processing src/point-to-point-layout
+-- Processing src/propagation
+-- Processing src/sixlowpan
+-- Processing src/spectrum
+-- Sionna supports requires extra dependencies: cppyy sionna.rt pybind11
+-- Processing src/stats
+-- Processing src/tap-bridge
+-- Processing src/topology-read
+-- Processing src/traffic-control
+-- Processing src/uan
+-- Processing src/virtual-net-device
+-- Processing src/wifi
+-- Processing src/zigbee
+-- ---- Summary of ns-3 settings:
+Build profile                 : debug
+Build directory               : /home/xi/ns-3-dev/build
+Build with runtime asserts    : [32mON[0m
+Build with runtime logging    : [32mON[0m
+Build version embedding       : OFF (not requested)
+BRITE Integration             : [31mOFF (Missing headers: "Brite.h" and missing libraries: "brite")[0m
+DES Metrics event collection  : OFF (not requested)
+DPDK NetDevice                : OFF (not requested)
+Emulation FdNetDevice         : [32mON[0m
+Examples                      : [32mON[0m
+File descriptor NetDevice     : [32mON[0m
+GNU Scientific Library (GSL)  : [31mOFF (GSL was not found)[0m
+GtkConfigStore                : [31mOFF (Harfbuzz is required by GTK3 and was not found)[0m
+LibXml2 support               : [31mOFF (LibXML2 was not found)[0m
+MPI Support                   : OFF (not requested)
+ns-3 Click Integration        : [31mOFF (Missing headers: "simclick.h" and missing libraries: "nsclick click")[0m
+ns-3 OpenFlow Integration     : [31mOFF (Missing headers: "openflow.h" and missing libraries: "openflow")[0m
+Netmap emulation FdNetDevice  : [31mOFF (missing dependency)[0m
+PyViz visualizer              : [31mOFF (Python Bindings are disabled)[0m
+Python Bindings               : OFF (not requested)
+SQLite support                : [31mOFF (missing dependency)[0m
+Eigen3 support                : [31mOFF (Eigen was not found)[0m
+Tap Bridge                    : [32mON[0m
+Tap FdNetDevice               : [32mON[0m
+Tests                         : OFF (not requested)
+
+
+Modules configured to be built:
+antenna                   aodv                      applications              
+bridge                    buildings                 config-store              
+core                      csma                      csma-layout               
+dsdv                      dsr                       energy                    
+fd-net-device             flow-monitor              internet                  
+internet-apps             lr-wpan                   lte                       
+mesh                      mobility                  netanim                   
+network                   nix-vector-routing        olsr                      
+point-to-point            point-to-point-layout     propagation               
+sixlowpan                 spectrum                  stats                     
+tap-bridge                topology-read             traffic-control           
+uan                       virtual-net-device        wifi                      
+zigbee                    
+
+Modules that cannot be built:
+brite                     click                     mpi                       
+openflow                  test                      visualizer                
+
+
+
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/xi/ns-3-dev/cmake-cache
+[  0%] Building CXX object scratch/fattree/CMakeFiles/scratch_fattree_fattree-tree.dir/tree-baseline.cc.o
+[  0%] Building CXX object scratch/fattree/CMakeFiles/scratch_fattree_fattree.dir/fat-tree-simulation.cc.o
+[  0%] Building CXX object scratch/fattree/CMakeFiles/scratch_fattree_fattree.dir/fat-tree-central-scheduler.cc.o
+[  0%] Building CXX object scratch/fattree/CMakeFiles/scratch_fattree_fattree.dir/fat-tree-routing.cc.o
+[  0%] Linking CXX executable /home/xi/ns-3-dev/build/scratch/fattree/ns3-dev-fattree-tree-debug
+[  0%] Linking CXX executable /home/xi/ns-3-dev/build/scratch/fattree/ns3-dev-fattree-debug
+Finished executing the following commands:
+/home/xi/.local/bin/cmake --build /home/xi/ns-3-dev/cmake-cache -j 47
+==== Traditional Tree (k=4, oversub=3.6, pattern=Stride(4)) ====
+主机数: 16，上行限速: 106.667 Mbps，统计到的流数: 16
+达到理想带宽的百分比: 27.7386 %
+RESULT,tree,stride,4,1,27.7386
+k=4, simTime=10s, Random 平均次数=3
+-------------------------------------------------------------------------------
+Pattern          Tree  TwoLevel  Classify  Schedule   论文 Tree/TL/CL/SC
+-------------------------------------------------------------------------------
+Stride(1)     99.8603   99.8589   99.8589   99.8589   100/100/100/100
+Stride(2)      77.669   99.8569   99.8569   99.8569   78.1/100/100/99.5
+Stride(4)     27.7386   99.8555   99.8555   99.8555   27.9/100/100/100
+Stride(8)     27.7386   99.8555   99.8555   99.8555   28.0/100/100/99.9
+Random           54.3      74.9      74.9      77.0   53.4/75/76.3/93.5
+Same-ID       27.7382   37.4796   49.9277   99.8555   27.8/38.5/75.4/87.4
+-------------------------------------------------------------------------------
+说明:
+ - 数值=达到理想双边带宽(k=4 时 1.536Gbps)的百分比, 越高越好。
+ - 趋势应为: 跨 Pod 模式下 Tree 最差(~28%); 胖树三法里
+   Schedule >= Classify >= TwoLevel, 最坏情况(Same-ID)差距最明显。
+ - 仿真器/UDP 与论文(Click/TCP)不同, 绝对值会有出入, 看趋势与大小关系。
+
+
+TRANSPORT=udp bash scratch/fattree/run_experiments.sh
+k=4, transport=udp, simTime=10s, Random 平均次数=3
+-------------------------------------------------------------------------------
+Pattern          Tree  TwoLevel  Classify  Schedule   论文 Tree/TL/CL/SC
+-------------------------------------------------------------------------------
+Stride(1)     99.8603   99.8589   99.8589   99.8589   100/100/100/100
+Stride(2)      77.669   99.8569   99.8569   99.8569   78.1/100/100/99.5
+Stride(4)     27.7386   99.8555   99.8555   99.8555   27.9/100/100/100
+Stride(8)     27.7386   99.8555   99.8555   99.8555   28.0/100/100/99.9
+Random           54.3      74.9      74.9      95.7   53.4/75/76.3/93.5
+Same-ID       27.7382   37.4796   49.9277   99.8555   27.8/38.5/75.4/87.4
+-------------------------------------------------------------------------------
+说明:
+ - 数值=达到理想双边带宽(k=4 时 1.536Gbps)的百分比, 越高越好。
+ - 趋势应为: 跨 Pod 模式下 Tree 最差(~28%); 胖树三法里
+   Schedule >= Classify >= TwoLevel, 最坏情况(Same-ID)差距最明显。
+ - 仿真器/UDP 与论文(Click/TCP)不同, 绝对值会有出入, 看趋势与大小关系
