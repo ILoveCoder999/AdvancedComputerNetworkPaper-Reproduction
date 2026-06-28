@@ -1,0 +1,14 @@
+
+
+
+====================================================
+ VL2 Simulation — Experiment 4
+====================================================
+ Topology  : 3 Int / 3 Aggr / 4 ToR / 20 servers
+ Total TX  : 399.137 GB
+ Total RX  : 399.023 GB
+ Flows done: 380
+ Jain Fair : 0.990137  (paper target ≥0.995)
+ Max theor : 20 Gbps
+ Goodput log: vl2_exp4_goodput.dat
+====================================================
