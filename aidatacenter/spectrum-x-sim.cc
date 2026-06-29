@@ -1,60 +1,15 @@
 /*
- * spectrum-x-sim.cc
- *
- * NVIDIA Spectrum-X RoCEv2 数据中心网络仿真
+ * spectrum-x-sim.cc — NVIDIA Spectrum-X RoCEv2 数据中心网络仿真
  * ──────────────────────────────────────────────────────────────
- * 架构概述（参考 NVIDIA Spectrum-X / Quantum-X800）
- * ────────────────────────────────────────────────
- *   · 单一统一 RoCEv2 以太网 Fabric（区别于 IB 的多 Rail 独立子网）
- *   · 交换机：Spectrum-4（64 × 400G 端口或 128 × 200G）
- *   · NIC：ConnectX-7 / BlueField-3（400G RoCEv2）
- *   · 路由：Adaptive Routing（AR）— 每包基于实时拥塞动态选路
- *           优于静态 ECMP，避免哈希碰撞造成的路径热点
- *   · 拥塞控制：NVIDIA SHIELD（Advanced CC）
- *               = ECN 标记 + Credit-based 混合，比标准 DCQCN 更激进
- *               低延迟目标：在 ECN 触发时更快降速，避免排队积压
- *   · 每服务器 1 块 ConnectX-7 NIC（vs Rail-Optimized 的多块 HCA）
- *     全部服务器共享同一 Fabric，支持任意对端通信无需 NVLink 转发
+ *   · 单一统一 RoCEv2 以太网 Fabric;Spectrum-4(K=64×400G)交换机;ConnectX-7 NIC
+ *   · 路由:Adaptive Routing ≈ RandomEcmpRouting
+ *   · 拥塞控制:NVIDIA SHIELD ≈ 激进 ECN(MinTh=8p, MaxTh=24p)
+ *   · 2-tier Leaf-Spine:serversPerLeaf=K/2=32, nSpine=K/2=32, nLeaf=ceil(N/32)
  *
- * 仿真参数（N=1332，对齐 3D Mesh 1331）
- * ───────────────────────────────────────
- *   N = 1332 服务器（每服务器 1 × 400G RoCEv2 NIC）
- *   拓扑：2-tier Leaf-Spine（K=64 Spectrum-4 交换机）
- *     · serversPerLeaf = K/2 = 32
- *     · nLeaf = ceil(1332/32) = 42（最后 1 台 Leaf 下挂 20 台）
- *     · nSpine = K/2 = 32
- *     · 过订阅比 = 42/32 = 1.3x（Spectrum-X 实际部署的典型值）
- *   链路：400 Gbps，200 ns（RoCEv2 以太网，比 IB 延迟略高）
+ * 规模运行时可调:--N(端点/服务器数;默认 1332 对齐 mesh3d 1331)。冒烟用小 --N。
+ * 注意:N 较大时 ns-3 PopulateRoutingTables(全局路由+ECMP)较慢(~分钟级,非卡死)。
  *
- * Spectrum-X vs Rail-Optimized IB 关键差异（仿真层面）
- * ──────────────────────────────────────────────────────
- *   特性               Spectrum-X          Rail-Optimized IB
- *   ──────────────     ──────────────      ─────────────────
- *   Fabric 数量        1 个统一 Fabric     R 个独立 Rail
- *   每服务器 NIC 数    1 块（400G）        R 块（R×400G）
- *   总服务器带宽       400 Gbps            R×400 Gbps
- *   跨 GPU 通信        走网络              走 NVLink（不过网络）
- *   拥塞控制           SHIELD/ECN（激进）  Credit-based（深队列）
- *   延迟（基础）       ~200ns（以太网）    ~100ns（IB 低延迟）
- *   AllReduce 策略     全 N 节点单环       R 条 N/R 节点独立环
- *   Bisection BW       nLeaf×nSpine×400G   R×nLeaf×nSpine×400G
- *
- * NVIDIA SHIELD 拥塞控制近似
- * ────────────────────────────
- *   · 使用 RED+ECN 队列规整器，MinTh/MaxTh 比标准 DCQCN 更小
- *     标准 DCQCN: MinTh≈20p, MaxTh≈60p
- *     SHIELD 激进: MinTh=8p, MaxTh=24p（更早触发 ECN，更快收敛）
- *   · ECMP + RandomEcmpRouting 近似 Adaptive Routing（AR）
- *     AR 在每包粒度动态选路，比 per-flow ECMP 更好分散热点
- *   · 深链路层队列（queuePkts=128）+ ECN 双保险：无损 + 低延迟
- *
- * 流量场景（--scenario=）
- * ──────────────────────
- *   uniform   : 全 N=1332 节点均匀随机打流
- *   incast    : 多对一（打向 server 0），测单 ToR 汇聚
- *   allreduce : 全 N=1332 节点逻辑环（vs Rail-OPT 的 N/R=333 节点环）
- *               注：单 Fabric 全环会竞争 Spine 带宽，这是与 Rail-OPT 的核心差距
- *   bisection : 前 N/2 打后 N/2，跨 ToR 全 Spine 层压力测试
+ * 流量场景(--scenario=): uniform | incast | allreduce | bisection | nccl_ar
  */
 
 #include <algorithm>
@@ -79,11 +34,11 @@
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("SpectrumXSim");
 
-// ─── 拓扑常量 ──────────────────────────────────────────────────────────────
-static const uint32_t N              = 1332;         // 服务器数
+// ─── 拓扑常量(N 运行时可调;N_LEAF 在 main 解析 --N 后重算)────────────────────
+static uint32_t       N              = 1332;         // 服务器数(--N 可调)
 static const uint32_t K_SWITCH       = 64;           // Spectrum-4 端口数
 static const uint32_t SRV_PER_LEAF   = K_SWITCH / 2; // = 32
-static const uint32_t N_LEAF         = (N + SRV_PER_LEAF - 1) / SRV_PER_LEAF; // = 42
+static uint32_t       N_LEAF         = (N + SRV_PER_LEAF - 1) / SRV_PER_LEAF; // ceil(N/32)
 static const uint32_t N_SPINE        = K_SWITCH / 2; // = 32
 
 // ─── 全局统计 ──────────────────────────────────────────────────────────────
@@ -172,17 +127,17 @@ int main (int argc, char *argv[])
   uint32_t    queuePkts    = 128;    // RoCEv2：ECN 触发前缓冲深度
   std::string linkRate     = "400Gbps";
   std::string linkDelay    = "200ns"; // 以太网延迟（比 IB 略高）
-  // SHIELD 激进 ECN 阈值（包数）：比标准 DCQCN 更小以快速收敛
-  uint32_t    ecnMinTh     = 8;
+  uint32_t    ecnMinTh     = 8;       // SHIELD 激进 ECN(比标准 DCQCN 小)
   uint32_t    ecnMaxTh     = 24;
   // —— 跨拓扑对比 all-reduce(nccl_ar) —— //
-  uint32_t    arRanks      = 32;        // all-reduce 逻辑 rank 数(跨网铺开)
-  uint32_t    modelMB      = 8;         // 每 rank 梯度/模型大小 M (MiB)
-  double      opticalFrac  = 1.0;       // 走光端口占比
-  double      simStop      = 3.0;       // 仿真停止时刻(s)
+  uint32_t    arRanks      = 32;
+  uint32_t    modelMB      = 8;
+  double      opticalFrac  = 1.0;
+  double      simStop      = 3.0;
 
   CommandLine cmd;
   cmd.AddValue ("scenario",     "uniform|incast|allreduce|bisection|nccl_ar", scenario);
+  cmd.AddValue ("N",            "服务器数(端点);冒烟用小值,默认 1332",   N);
   cmd.AddValue ("arRanks",      "nccl_ar: all-reduce rank count", arRanks);
   cmd.AddValue ("modelMB",      "nccl_ar: gradient size M per rank (MiB)", modelMB);
   cmd.AddValue ("opticalFrac",  "fraction of ports on optics (rest DAC)", opticalFrac);
@@ -197,6 +152,10 @@ int main (int argc, char *argv[])
   cmd.AddValue ("ecnMaxTh",     "RED ECN MaxTh (pkts)",     ecnMaxTh);
   cmd.Parse (argc, argv);
 
+  // 解析 --N 后重算 Leaf 数(Spine 数由 K 决定,固定 32)
+  if (N < 1) N = 1;
+  N_LEAF = (N + SRV_PER_LEAF - 1) / SRV_PER_LEAF;
+
   // Adaptive Routing 近似：RandomEcmpRouting
   Config::SetDefault ("ns3::Ipv4GlobalRouting::RandomEcmpRouting",
                       BooleanValue (true));
@@ -207,7 +166,10 @@ int main (int argc, char *argv[])
             << "  Oversubscription: " << (double)N_LEAF/N_SPINE << "x\n"
             << "  Link: " << linkRate << " / " << linkDelay << "\n"
             << "  CC: SHIELD (ECN MinTh=" << ecnMinTh << "p MaxTh=" << ecnMaxTh << "p)"
-            << "  AR: RandomECMP\n\n";
+            << "  AR: RandomECMP\n";
+  if (N >= 512)
+    std::cout << "  [note] N 较大,PopulateRoutingTables(全局路由)可能要几分钟,非卡死。\n";
+  std::cout << "\n";
 
   // ── 节点 ──
   NodeContainer servers; servers.Create (N);
@@ -227,7 +189,7 @@ int main (int argc, char *argv[])
   p2p.SetQueue ("ns3::DropTailQueue<Packet>",
                 "MaxSize", QueueSizeValue (QueueSize (qs.str ())));
 
-  // NVIDIA SHIELD 激进 ECN：更小的 MinTh/MaxTh 快速触发拥塞通知
+  // NVIDIA SHIELD 激进 ECN
   TrafficControlHelper tch;
   tch.SetRootQueueDisc ("ns3::RedQueueDisc",
                         "MinTh",   DoubleValue (ecnMinTh),
@@ -278,14 +240,12 @@ int main (int argc, char *argv[])
   std::cout << "  Links: " << N << " srv-leaf + "
             << N_LEAF*N_SPINE << " leaf-spine = " << subnet << " total\n";
 
-  // ── 路由 ──
   std::cout << "  Populating routing tables (" << N+N_LEAF+N_SPINE << " nodes)...\n";
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   for (uint32_t i = 0; i < N; ++i)
     addr[i] = InetSocketAddress (serverIp[i], PORT);
 
-  // ── 安装应用 ──
   std::vector<Ptr<SxHost>> apps (N);
   for (uint32_t i = 0; i < N; ++i)
     {
@@ -300,7 +260,6 @@ int main (int argc, char *argv[])
       apps[i] = a;
     }
 
-  // ── 调度流量 ──
   Ptr<UniformRandomVariable> rng = CreateObject<UniformRandomVariable> ();
   uint64_t pid = 1;
   DataRate dr (linkRate);
@@ -308,8 +267,6 @@ int main (int argc, char *argv[])
 
   if (scenario == "allreduce")
     {
-      // 全 N=1332 节点单环 AllReduce（区别于 Rail-OPT 的 R×N/R 并行环）
-      // 每个节点向下一个节点发 64 包；Spine 层承载大量跨 ToR 流量
       double base = 1.0;
       for (uint32_t s = 0; s < N; ++s)
         {
@@ -318,8 +275,7 @@ int main (int argc, char *argv[])
             Simulator::Schedule (Seconds (base + m * serSec),
                                  &SxHost::Send, apps[s], dst, pktBytes, pid++);
         }
-      std::cout << "  Scenario: allreduce ring (N=" << N
-                << ", full ring through single fabric)\n";
+      std::cout << "  Scenario: allreduce ring (N=" << N << ")\n";
     }
   else if (scenario == "incast")
     {
@@ -352,7 +308,6 @@ int main (int argc, char *argv[])
   else if (scenario == "nccl_ar")
     {
       // 跨拓扑对比工作负载：真 NCCL Ring AllReduce(arRanks 个 rank 跨网铺开)。
-      // SHIELD/ECN fabric 无主机端 pacing → 按每源线速起拍注入。
       uint64_t M = (uint64_t) modelMB * 1024 * 1024;
       std::vector<uint32_t> ranks;
       std::vector<nccl::CommOp> ops = cmp::BuildComparisonAllReduce (N, arRanks, M, &ranks);
@@ -389,14 +344,12 @@ int main (int argc, char *argv[])
       std::cout << "  Scenario: uniform random (" << uniformFlows << " flows)\n";
     }
 
-  // ── 运行 ──
   double simDuration = simStop;
   Simulator::Stop (Seconds (simDuration));
   std::cout << "  Running simulation...\n\n";
   Simulator::Run ();
   Simulator::Destroy ();
 
-  // ── 统计 ──
   uint64_t delivered = g_done.size ();
   uint64_t dropped   = (g_sent >= delivered) ? (g_sent - delivered) : 0;
   double rxDurSec = (g_last_recv > g_first_recv && g_first_recv > 0)
@@ -404,80 +357,33 @@ int main (int argc, char *argv[])
   double tputGbps = rxDurSec > 0
                     ? (delivered * pktBytes * 8.0) / (rxDurSec * 1e9) : 0.0;
 
-  // 延迟分布
   std::vector<double> lats;
   lats.reserve (g_done.size ());
   for (auto &p : g_done)
     if (p.recvNs > 0) lats.push_back (p.recvNs - p.sentNs);
   std::sort (lats.begin (), lats.end ());
-  double meanUs = 0, p50Us = 0, p99Us = 0, maxUs = 0;
+  double meanUs = 0, p99Us = 0;
   if (!lats.empty ())
     {
       double sum = 0; for (double v : lats) sum += v;
       meanUs = sum / lats.size () / 1000.0;
-      p50Us  = lats[lats.size () * 50 / 100] / 1000.0;
       p99Us  = lats[lats.size () * 99 / 100] / 1000.0;
-      maxUs  = lats.back () / 1000.0;
     }
 
-  // 能耗（Spectrum-4 交换机约 450W，更高端比 100G 交换机贵）
-  uint32_t nSwitches    = N_LEAF + N_SPINE;
-  double P_srv_static   = 2000.0;
-  double P_srv_full     = 8000.0;
-  double P_sw_sx        = 450.0;   // W（Spectrum-4 400G 交换机）
-  double E_dyn_bit      = 10e-12;
-
-  double staticEnergy  = (N * P_srv_static + nSwitches * P_sw_sx) * simDuration;
-  double computeEnergy = rxDurSec > 0 ? N * (P_srv_full - P_srv_static) * rxDurSec : 0;
-  double netEnergy     = g_total_bits * E_dyn_bit;
-  double totalEnergy   = staticEnergy + computeEnergy + netEnergy;
-  double avgPower      = totalEnergy / simDuration;
-
-  // ── 输出 ──
-  std::cout << "=== Results: scenario=" << scenario
-            << "  N=" << N << " ===\n";
+  std::cout << "=== Results: scenario=" << scenario << "  N=" << N << " ===\n";
   std::cout << "sent=" << g_sent << "  delivered=" << delivered
             << "  dropped=" << dropped
             << " (" << (g_sent ? 100.0*dropped/g_sent : 0.0) << "%)\n";
-  std::cout << "-------------------------------------------\n";
-  std::cout << "吞吐量 (Throughput)     : " << tputGbps  << " Gbps\n";
-  std::cout << "接收有效时长 (Duration)  : " << rxDurSec  << " s\n";
-  std::cout << "-------------------------------------------\n";
-  std::cout << "延迟分布 (Latency)\n";
-  std::cout << "  mean=" << meanUs << " µs  p50=" << p50Us
-            << " µs  p99=" << p99Us << " µs  max=" << maxUs << " µs\n";
-  std::cout << "-------------------------------------------\n";
-  std::cout << "全网总能耗 (Total Energy): " << totalEnergy << " J\n";
-  std::cout << "  ├─ 服务器静态         : "
-            << N * P_srv_static * simDuration << " J  (" << N << " × 2000W)\n";
-  std::cout << "  ├─ 服务器计算增量     : " << computeEnergy << " J\n";
-  std::cout << "  ├─ Spectrum-4 交换机  : "
-            << nSwitches * P_sw_sx * simDuration
-            << " J  (" << nSwitches << " × 450W)\n";
-  std::cout << "  └─ 链路动态传输       : " << netEnergy << " J\n";
-  std::cout << "全网平均总功耗 (Avg Power): " << avgPower << " W\n";
-  std::cout << "-------------------------------------------\n";
-  std::cout << "拓扑指标\n";
-  std::cout << "  每服务器带宽  : 400 Gbps（单 ConnectX-7 NIC）\n";
-  std::cout << "  Bisection BW  : " << N_LEAF << "×" << N_SPINE
-            << " = " << N_LEAF*N_SPINE << " links × 400G = "
-            << (double)N_LEAF*N_SPINE*400 << " Gbps\n";
-  std::cout << "  vs Rail-OPT   : Bisection BW / 4 = "
-            << (double)N_LEAF*N_SPINE*400/4 << " Gbps per rail\n";
-  std::cout << "  过订阅        : " << N_LEAF << "/" << N_SPINE
-            << " = " << (double)N_LEAF/N_SPINE << "x\n";
-  std::cout << "-------------------------------------------\n";
+  std::cout << "  Throughput=" << tputGbps << " Gbps  Duration=" << rxDurSec << " s\n";
+  std::cout << "  Latency mean=" << meanUs << " µs  p99=" << p99Us << " µs\n";
 
-  // CSV
   std::ofstream csv ("spectrum_x_result.csv");
   csv << "scenario,N,N_leaf,N_spine,K,ecn_min,ecn_max,"
-         "sent,delivered,dropped,"
-         "throughput_Gbps,mean_us,p99_us,total_energy_J,avg_power_W\n";
+         "sent,delivered,dropped,throughput_Gbps,mean_us,p99_us\n";
   csv << scenario << "," << N << "," << N_LEAF << "," << N_SPINE << ","
       << K_SWITCH << "," << ecnMinTh << "," << ecnMaxTh << ","
       << g_sent << "," << delivered << "," << dropped << ","
-      << tputGbps << "," << meanUs << "," << p99Us << ","
-      << totalEnergy << "," << avgPower << "\n";
+      << tputGbps << "," << meanUs << "," << p99Us << "\n";
   std::cout << "wrote spectrum_x_result.csv\n";
 
   // ═══════════ 统一网络能耗 + 跨拓扑对比输出(energy-model.h / cmp-common.h) ═══════════
@@ -485,7 +391,6 @@ int main (int argc, char *argv[])
                ? (g_last_recv / 1e9 - g_inject_start) : rxDurSec;
   {
     EnergyModel em;
-    // 单一统一 Leaf-Spine 清单:N server、N_LEAF、N_SPINE、leaf-spine 链路 = N_LEAF*N_SPINE。
     em.inv = EnergyInventory::LeafSpine (N, N_LEAF, N_SPINE, (uint64_t) N_LEAF * N_SPINE,
                                          (double) dr.GetBitRate () / 1e9, /*gpuPerSrv=*/1);
     if (opticalFrac < 1.0)
