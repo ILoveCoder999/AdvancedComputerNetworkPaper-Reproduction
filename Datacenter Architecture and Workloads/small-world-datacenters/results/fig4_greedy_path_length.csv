@@ -1,0 +1,5 @@
+topology,avg_path_length
+SW-Ring,3.679
+SW-2DTorus,4.229
+SW-3DHexTorus,4.303
+CamCube,6.12

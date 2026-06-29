@@ -1,0 +1,2 @@
+topology,traffic,pkt_size_B,n_nodes,avg_latency_us,agg_bw_Gbps,delivery_ratio,fault_frac,flows
+SW-Ring,uniform,1024,512,1743.84,1.7236,1,0,512
