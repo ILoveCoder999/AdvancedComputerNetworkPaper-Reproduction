@@ -1,0 +1,30 @@
+=== Dragonfly + InfiniBand NDR ===
+  a=2 p=2 h=2  g=5 groups  N=20 servers
+  Routers=10  Links: 20(srv-rtr) + 5(intra) + 10(inter) = 35 total
+  Link: 400Gbps / 100ns  ECMP: on (approx UGAL)
+
+  Inter-group links built: 10  (expect 10)
+  Populating routing tables (30 nodes)...
+  Scenario: nccl_ar Ring AllReduce  arRanks=8  M=1MiB  ops=112  pkts=14336
+  Running simulation...
+
+=== Results: scenario=nccl_ar  a=2 g=5 N=20 ===
+sent=14336  delivered=14180  dropped=156 (1.08817%)
+  Throughput=2395.89 Gbps  Duration=4.8484e-05 s
+  Latency mean=4.14539 µs  p99=16.785 µs
+wrote dragonfly_ib_result.csv
+
+──────── ENERGY [dragonfly / nccl_ar] ────────
+  Inventory : switch=10 swPorts=50 hostPorts=20 nic=20 fpga=0 optical=70 gpu=20 @400G
+  Static P  : 3905.0 W   (switch+optics+serdes+nic+fpga, always-on)
+  Dyn  E    : 0.001 J   over 0.0000 s
+  Avg  P    : 3934.8 W   |  per-GPU 196.7 W
+  Total E   : 0.192 J   (static 99%)
+  Net eff   : 1654.60 pJ/bit delivered
+  — FAIRNESS (apples-to-apples) —
+    Bisection : 2000 Gbps total | 100.0 Gbps/GPU
+    Per GPU   : ports=3.5 cables=1.8 xcvr=3.5
+    Cost/BW   : 1.967 W per Gbps-bisection   <-- 性价比横向对比
+    Achieved  : tput=2396 Gbps | bisecUtil=1.20 | 0.6089 Gbps/W
+──────────────────────────────────────
+wrote cmp_dragonfly.csv  (busbw=300.532 Gbps, eff=0.751329)

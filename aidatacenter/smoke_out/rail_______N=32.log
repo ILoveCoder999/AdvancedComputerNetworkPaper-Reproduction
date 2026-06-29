@@ -1,0 +1,34 @@
+=== Rail-Optimized InfiniBand NDR ===
+  R=4 rails  N_per_rail=8  Total N=32
+  Per-rail topology: K=32  nLeaf=1  nSpine=16  oversubscription=0.0625x
+  Link: 400Gbps / 100ns  (IB credit-based lossless, deep queue=256p)
+
+  Links built: 96 total  (4 rails × 24 per rail)
+  Populating routing tables (100 nodes)...
+  Scenario: nccl_ar  4 parallel rings × 2 ranks  M=1MiB  pkts=8192
+  Running simulation...
+
+=== Results: scenario=nccl_ar  R=4  N=32 ===
+sent=8192  delivered=8192  dropped=0 (0%)
+  Rail 0: 780.953 Gbps
+  Rail 1: 780.953 Gbps
+  Rail 2: 780.953 Gbps
+  Rail 3: 780.953 Gbps
+  全系统聚合吞吐: 3123.81 Gbps
+  Latency mean=0.50798 µs  p99=0.769 µs
+wrote rail_ib_result.csv
+
+──────── ENERGY [rail / nccl_ar] ────────
+  Inventory : switch=68 swPorts=160 hostPorts=32 nic=32 fpga=0 optical=192 gpu=32 @400G
+  Static P  : 20488.0 W   (switch+optics+serdes+nic+fpga, always-on)
+  Dyn  E    : 0.000 J   over 0.0000 s
+  Avg  P    : 20507.3 W   |  per-GPU 640.9 W
+  Total E   : 0.446 J   (static 100%)
+  Net eff   : 6638.78 pJ/bit delivered
+  — FAIRNESS (apples-to-apples) —
+    Bisection : 12800 Gbps total | 400.0 Gbps/GPU
+    Per GPU   : ports=6.0 cables=3.0 xcvr=6.0
+    Cost/BW   : 1.602 W per Gbps-bisection   <-- 性价比横向对比
+    Achieved  : tput=3124 Gbps | bisecUtil=0.24 | 0.1523 Gbps/W
+──────────────────────────────────────
+wrote cmp_rail.csv  (busbw=675.722 Gbps, eff=1.68931, 4 parallel rings)

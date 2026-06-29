@@ -1,0 +1,27 @@
+=== RNG Paper Figure 13 Reproduction ===
+  Topology : rng (N_ep=64, d=8)
+  Link     : 400Gbps / 200ns
+  Queue    : 64p
+
+  [nccl_ar] 跨拓扑对比 all-reduce  arRanks=8  M=1MiB  N=64  (queue 建议调大,如 --queuePkts=256)
+
+  RRG generation failed after 200 attempts, using fallback method
+  Fallback graph generated with 253 edges
+  Node degrees: min=2 max=8
+  RNG topology: N=64 D=8 edges=253
+  pattern=nccl_ar f=0.3 nActive=20 nFlows=112 nPkts=14336
+
+──────── ENERGY [rng / nccl_ar] ────────
+  Inventory : switch=0 swPorts=0 hostPorts=506 nic=0 fpga=512 optical=506 gpu=64 @400G
+  Static P  : 31419.0 W   (switch+optics+serdes+nic+fpga, always-on)
+  Dyn  E    : 0.001 J   over 0.0000 s
+  Avg  P    : 31445.4 W   |  per-GPU 491.3 W
+  Total E   : 1.204 J   (static 100%)
+  Net eff   : 10248.08 pJ/bit delivered
+  — FAIRNESS (apples-to-apples) —
+    Bisection : 51200 Gbps total | 800.0 Gbps/GPU
+    Per GPU   : ports=7.9 cables=4.0 xcvr=7.9
+    Cost/BW   : 0.614 W per Gbps-bisection   <-- 性价比横向对比
+    Achieved  : tput=3104 Gbps | bisecUtil=0.06 | 0.0987 Gbps/W
+──────────────────────────────────────
+wrote cmp_rng.csv  (busbw=383.552 Gbps, eff=0.95888)

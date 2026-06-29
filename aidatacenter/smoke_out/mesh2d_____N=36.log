@@ -1,0 +1,24 @@
+  Scenario: nccl_ar Ring AllReduce  arRanks=8  M=1MiB  ops=112  pkts=14336
+running simulation ... (credit=1 window=64p, queue=64p, links=180)
+
+=== scenario=nccl_ar credit=1 fanin=64 window=64p ===
+sent=14336 delivered=14336 dropped=0 (0%)  [credit 无损:dropped 应=0]
+relay  count   mean_us   p99_us
+  0     3584     0.687     1.143
+  1    10752     1.805     3.140
+wrote mesh_result.csv
+
+──────── ENERGY [mesh2d / nccl_ar] ────────
+  Inventory : switch=0 swPorts=0 hostPorts=360 nic=0 fpga=288 optical=360 gpu=36 @400G
+  Static P  : 18540.0 W   (switch+optics+serdes+nic+fpga, always-on)
+  Dyn  E    : 0.001 J   over 0.0000 s
+  Avg  P    : 18556.3 W   |  per-GPU 515.5 W
+  Total E   : 0.739 J   (static 100%)
+  Net eff   : 6295.89 pJ/bit delivered
+  — FAIRNESS (apples-to-apples) —
+    Bisection : 21600 Gbps total | 600.0 Gbps/GPU
+    Per GPU   : ports=10.0 cables=5.0 xcvr=10.0
+    Cost/BW   : 0.859 W per Gbps-bisection   <-- 性价比横向对比
+    Achieved  : tput=2964 Gbps | bisecUtil=0.14 | 0.1597 Gbps/W
+──────────────────────────────────────
+wrote cmp_mesh2d.csv  (busbw=368.42 Gbps, eff=0.92105)

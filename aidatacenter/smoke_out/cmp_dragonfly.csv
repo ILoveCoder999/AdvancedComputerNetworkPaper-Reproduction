@@ -1,0 +1,2 @@
+topology,arRanks,modelBytes,lineRate_Gbps,jct_s,sent,delivered,dropped,tput_Gbps,algbw_Gbps,busbw_Gbps,busbw_eff,total_energy_J,avg_power_W,pJ_per_bit,gbps_per_W,bisection_Gbps,pfc_paused_s,pfc_peak_KB,pfc_drops
+dragonfly,8,1048576,400,4.8847e-05,14336,14180,156,2395.89,171.732,300.532,0.751329,0.192202,3934.78,1654.6,0.608901,2000,-1,-1,0

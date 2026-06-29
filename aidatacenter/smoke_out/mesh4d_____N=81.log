@@ -1,0 +1,36 @@
+building 4D mesh: 3^4 = 81 hosts ...
+  4D links built: 324  (credit=1 window=64p, queue=64p)
+  populating routing tables (this WILL take a moment for 1296 nodes)... 
+  scenario=nccl_ar Ring AllReduce  arRanks=8  M=1MiB  ops=112  pkts=14336
+running simulation ...
+
+=== 4D mesh 3^4=81 scenario=nccl_ar credit=1 window=64p ===
+sent=14336 delivered=14336 dropped=0 (0%)  [credit 无损:dropped 应=0]
+-------------------------------------------
+吞吐量 (Throughput)     : 2947.36 Gbps
+接收有效时长 (Duration)  : 3.9846e-05 s
+全网总能耗 (Total Energy): 4.05002e+06 J  (本地粗模型, 仅参考)
+  ├─ 服务器基础静态能耗(Static) : 4.05e+06 J (2000W 基础)
+  ├─ GPU满载额外计算能耗(Compute): 19.3652 J (突发 8000W 增量)
+  └─ 网卡/光模块动态传输(Network): 0.0034005 J
+全网平均总功耗 (Avg Power): 162001 W
+-------------------------------------------
+relay  count   mean_us   p99_us   max_us
+  1     8960     1.805     3.140     3.166
+  3     5376     2.249     3.584     3.610
+wrote mesh4d_result.csv
+
+──────── ENERGY [mesh4d / nccl_ar] ────────
+  Inventory : switch=0 swPorts=0 hostPorts=648 nic=0 fpga=648 optical=648 gpu=81 @400G
+  Static P  : 39852.0 W   (switch+optics+serdes+nic+fpga, always-on)
+  Dyn  E    : 0.001 J   over 0.0000 s
+  Avg  P    : 39877.3 W   |  per-GPU 492.3 W
+  Total E   : 1.607 J   (static 100%)
+  Net eff   : 13680.60 pJ/bit delivered
+  — FAIRNESS (apples-to-apples) —
+    Bisection : 10800 Gbps total | 133.3 Gbps/GPU
+    Per GPU   : ports=8.0 cables=4.0 xcvr=8.0
+    Cost/BW   : 3.692 W per Gbps-bisection   <-- 性价比横向对比
+    Achieved  : tput=2947 Gbps | bisecUtil=0.27 | 0.0739 Gbps/W
+──────────────────────────────────────
+wrote cmp_mesh4d.csv  (busbw=364.36 Gbps, eff=91.09%)

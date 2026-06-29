@@ -1,0 +1,28 @@
+Invalid command-line argument: --N=64
+ [Program Options] [General Arguments]
+
+Program Options:
+    --scenario:      uniform|incast|allreduce|bisection|nccl_ar [uniform]
+    --arRanks:       nccl_ar: all-reduce rank count [32]
+    --modelMB:       nccl_ar: gradient size M per rank (MiB) [8]
+    --opticalFrac:   fraction of ports on optics (rest DAC) [1]
+    --simStop:       simulator stop time (s) [3]
+    --uniformFlows:  number of random flows [200000]
+    --incastFanin:   incast fan-in [64]
+    --pktBytes:      payload bytes [1024]
+    --queuePkts:     queue depth (packets) [128]
+    --linkRate:      link rate [400Gbps]
+    --linkDelay:     link delay [200ns]
+    --ecnMinTh:      RED ECN MinTh (pkts) [8]
+    --ecnMaxTh:      RED ECN MaxTh (pkts) [24]
+
+General Arguments:
+    --PrintGlobals:              Print the list of globals.
+    --PrintGroups:               Print the list of groups.
+    --PrintGroup=[group]:        Print all TypeIds of group.
+    --PrintTypeIds:              Print all TypeIds.
+    --PrintAttributes=[typeid]:  Print all attributes of typeid.
+    --PrintVersion:              Print the ns-3 version.
+    --PrintHelp:                 Print this help message.
+
+Command 'build/aidatacenter/ns3-dev-spectrum-x-sim-optimized --scenario=nccl_ar --arRanks=8 --modelMB=1 --linkRate=400Gbps --N=64' returned non-zero exit status 1.

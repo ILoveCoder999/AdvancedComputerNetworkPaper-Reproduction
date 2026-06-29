@@ -1,0 +1,35 @@
+=== 3-Tier Fat-Tree + RoCEv2 (DCQCN), K=4 ===
+  Total Nodes: 16 servers
+  Active Scenario: nccl_ar
+  Link: 400Gbps / 200ns
+  Lossless Queue: 1024p | ECN RED: 100/300p
+
+  Scenario: nccl_ar Ring AllReduce  arRanks=8  M=1MiB  ops=112  pkts=14336
+  Running NS3 Simulation Framework...
+
+================= RESULTS =================
+  Scenario Mode      : nccl_ar
+  Sent / Delivered   : 14336 / 14336 (Dropped: 0)
+  CNP Sent/Recv      : 0 / 0
+  CE Packets         : 0
+  Theory Demand      : 3200 Gbps
+  Realized Tput      : 3086.24 Gbps
+  Oversubscription   : 1.03686   <-- (Figure 13 纵轴指标)
+  Latency (Mean/p99) : 1.105 µs / 1.326 µs
+===========================================
+
+
+──────── ENERGY [fat_tree / nccl_ar] ────────
+  Inventory : switch=20 swPorts=80 hostPorts=16 nic=16 fpga=0 optical=96 gpu=16 @400G
+  Static P  : 6744.0 W   (switch+optics+serdes+nic+fpga, always-on)
+  Dyn  E    : 0.002 J   over 0.0000 s
+  Avg  P    : 6791.1 W   |  per-GPU 424.4 W
+  Total E   : 0.264 J   (static 99%)
+  Net eff   : 2251.57 pJ/bit delivered
+  — FAIRNESS (apples-to-apples) —
+    Bisection : 3200 Gbps total | 200.0 Gbps/GPU
+    Per GPU   : ports=6.0 cables=3.0 xcvr=6.0
+    Cost/BW   : 2.122 W per Gbps-bisection   <-- 性价比横向对比
+    Achieved  : tput=3086 Gbps | bisecUtil=0.96 | 0.4545 Gbps/W
+──────────────────────────────────────
+wrote cmp_fat_tree.csv  (busbw=377.021 Gbps, eff=0.942552)

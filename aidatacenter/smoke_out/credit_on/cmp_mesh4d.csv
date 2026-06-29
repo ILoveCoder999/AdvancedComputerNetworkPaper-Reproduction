@@ -1,0 +1,2 @@
+topology,arRanks,modelBytes,lineRate_Gbps,jct_s,sent,delivered,dropped,tput_Gbps,algbw_Gbps,busbw_Gbps,busbw_eff,total_energy_J,avg_power_W,pJ_per_bit,gbps_per_W,bisection_Gbps,pfc_paused_s,pfc_peak_KB,pfc_drops
+mesh4d,8,1048576,400,4.029e-05,14336,14336,0,2947.36,208.206,364.36,0.9109,1.60666,39877.3,13680.6,0.0739107,10800,-1,-1,0

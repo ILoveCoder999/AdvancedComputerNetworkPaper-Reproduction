@@ -1,0 +1,52 @@
+=== Leaf-Spine + RoCEv2 (DCQCN) ===
+  K=8  nLeaf=4  nSpine=4  N=16
+  Link: 400Gbps / 200ns
+  Lossless: DropTail 256p (deep buffer)
+  ECN: RED MinTh=20p MaxTh=60p
+  CC: DCQCN (g=0.0625 RAI=40Mbps RT=55µs)
+
+  Links: 32 total
+  Scenario: nccl_ar Ring AllReduce  arRanks=8  M=1MiB  ops=112  pkts=14336  (PFC=on)
+  Running...
+
+=== Results: scenario=nccl_ar K=8 N=16 ===
+sent=14336  delivered=14336  dropped=0 (0%)
+-------------------------------------------
+吞吐量 (Throughput)  : 3086.24 Gbps
+Duration            : 3.8053e-05 s
+-------------------------------------------
+延迟 (Latency)
+  mean=0.663 µs  p50=0.884 µs  p99=0.884 µs  max=0.884 µs
+-------------------------------------------
+RoCEv2 / DCQCN 诊断
+  CE 标记包数  : 0
+  CNP 发出     : 0
+  CNP 收到     : 0
+  CE 率        : 0%
+-------------------------------------------
+全网总能耗 (Total Energy): 103204 J
+  ├─ 服务器静态     : 96000 J
+  ├─ 服务器计算增量 : 3.65309 J
+  ├─ 交换机静态     : 7200 J  (8 × 300W)
+  └─ 链路动态       : 0.00366772 J
+Avg Power           : 34401.2 W
+-------------------------------------------
+wrote leaf_spine_roce_result.csv
+
+──────── ENERGY [leaf_spine / nccl_ar] ────────
+  Inventory : switch=8 swPorts=48 hostPorts=16 nic=16 fpga=0 optical=64 gpu=16 @400G
+  Static P  : 3248.0 W   (switch+optics+serdes+nic+fpga, always-on)
+  Dyn  E    : 0.001 J   over 0.0000 s
+  Avg  P    : 3276.6 W   |  per-GPU 204.8 W
+  Total E   : 0.126 J   (static 99%)
+  Net eff   : 1074.01 pJ/bit delivered
+  — FAIRNESS (apples-to-apples) —
+    Bisection : 3200 Gbps total | 200.0 Gbps/GPU
+    Per GPU   : ports=4.0 cables=2.0 xcvr=4.0
+    Cost/BW   : 1.024 W per Gbps-bisection   <-- 性价比横向对比
+    Achieved  : tput=3086 Gbps | bisecUtil=0.96 | 0.9419 Gbps/W
+──────────────────────────────────────
+  — PFC (real state machine on switch ingress) —
+    ingress ports : 48   drops=0 (must be 0 = lossless)
+    peak occ      : 1.03906 KB   pausedPorts=0   sumPausedSec=0
+wrote cmp_leaf_spine.csv  (busbw=381.35 Gbps, eff=0.953375)

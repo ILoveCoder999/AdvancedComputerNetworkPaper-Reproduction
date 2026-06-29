@@ -1,0 +1,2 @@
+topology,arRanks,modelBytes,lineRate_Gbps,jct_s,sent,delivered,dropped,tput_Gbps,algbw_Gbps,busbw_Gbps,busbw_eff,total_energy_J,avg_power_W,pJ_per_bit,gbps_per_W,bisection_Gbps,pfc_paused_s,pfc_peak_KB,pfc_drops
+rng,8,1048576,400,3.8274e-05,14336,14336,0,3104.26,219.172,383.552,0.95888,1.20354,31445.4,10248.1,0.0987193,51200,-1,-1,0
