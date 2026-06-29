@@ -19,6 +19,13 @@ OUT_DIR="$AIDC/results_batch"
 # 按布局确定运行名前缀 PFX 与是否 --no-build(NB)
 if [ "$LAYOUT" = "subdir" ]; then PFX="aidatacenter/"; NB="--no-build"; else PFX=""; NB=""; fi
 
+# ── 日志:整轮 console 输出 → results_batch/batch.log(同时仍打屏);各 sim 完整输出
+#    单独存 results_batch/logs/<label>.log(含能耗摘要)。LOG_FILE 可环境变量覆盖。 ──
+LOG_DIR="$OUT_DIR/logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="${LOG_FILE:-$OUT_DIR/batch.log}"
+exec > >(tee "$LOG_FILE") 2>&1
+
 echo "========================================================="
 echo " 批量测试 AI 数据中心架构  (LAYOUT=$LAYOUT)"
 echo " 参数: arRanks=${AR_RANKS}, modelMB=${MODEL_MB}, linkRate=${LINK_RATE}"
@@ -28,8 +35,19 @@ if [ ! -d "$NS3_DIR" ] || [ ! -x "$NS3_DIR/ns3" ]; then
     echo "错误: 未找到 ns-3($NS3_DIR/ns3)。请设 NS3_DIR。"; exit 1
 fi
 
-# 运行一个 sim:加前缀 + (子目录布局下)--no-build。cmp_*.csv 会写到 ns-3 根目录。
-runsim () { echo " - $1"; ./ns3 run "${PFX}$2" $NB; }
+# 运行一个 sim:前缀 +(子目录)--no-build;完整输出存 logs/<label>.log,控制台只打状态+用时。
+# cmp_*.csv 仍写到 ns-3 根目录(cwd)。失败时把日志末尾 tail 出来。
+runsim () {
+  local label="$1" cmd="$2"
+  local log="$LOG_DIR/$(printf '%s' "$label" | tr -cs 'A-Za-z0-9_.-' '_').log"
+  local t0; t0=$(date +%s)
+  echo "  ▶ $(date '+%T') 开始: $label    (实时: tail -f $log)"
+  if ./ns3 run "${PFX}$cmd" $NB > "$log" 2>&1; then
+    echo "  ✔ $(date '+%T') 完成: $label    用时 $(( $(date +%s) - t0 ))s"
+  else
+    echo "  ✗ $(date '+%T') 失败: $label    (见 $log)↓"; tail -n 8 "$log" | sed 's/^/        /'
+  fi
+}
 
 echo ">> [1/4] 编译..."
 if [ "$LAYOUT" = "flat" ]; then
@@ -93,4 +111,6 @@ echo " 批量测试完成！"
 echo " 主对比图 (9 拓扑): $OUT_DIR/topo_comparison.png"
 [ "$CREDIT_ABLATION" = "1" ] && echo " 信用消融图 (mesh 无损 vs 有损): $OUT_DIR/credit_ablation.png"
 echo " 全部 CSV / 图表在: $OUT_DIR"
+echo " 运行日志: $LOG_FILE   (各 sim 明细: $LOG_DIR/<label>.log)"
+echo "[$(date '+%F %T')] 全部完成。"
 echo "========================================================="
